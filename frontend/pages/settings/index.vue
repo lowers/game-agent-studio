@@ -154,11 +154,6 @@ const { isDark } = useTheme()
 const { user, isAuthenticated } = useAuth()
 const api = useApi()
 
-// 未登录时跳转到登录页
-watch(isAuthenticated, (val) => {
-  if (!val) navigateTo('/login')
-}, { immediate: true })
-
 // LLM 配置表单
 const llmForm = reactive({
   apiKey: '',
