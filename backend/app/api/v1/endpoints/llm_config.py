@@ -3,9 +3,12 @@ LLM 配置端点 — 允许用户动态配置 LLM 提供商和 API Key，并验�
 """
 import os
 from pathlib import Path
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from langchain_openai import ChatOpenAI
+
+from app.api.v1.deps import require_current_user
+from app.models.user import User
 
 router = APIRouter()
 
@@ -48,7 +51,10 @@ PROVIDER_MODELS = {
 
 
 @router.post("/llm/configure")
-async def configure_llm(payload: LlmConfigRequest):
+async def configure_llm(
+    payload: LlmConfigRequest,
+    user: User = Depends(require_current_user),
+):
     """动态配置 LLM 提供商和 API Key。"""
     provider = payload.provider.strip().lower()
     if provider not in VALID_PROVIDERS:
@@ -81,7 +87,6 @@ async def configure_llm(payload: LlmConfigRequest):
         env_map["LLM_PROVIDER"] = "ollama"
         env_map["LLM_BASE_URL"] = payload.base_url or "http://localhost:11434"
         env_map["LLM_API_KEY"] = ""
-        env_map["LLM_BASE_URL"] = payload.base_url or ""
     else:
         # deepseek / openai
         env_map["LLM_PROVIDER"] = payload.provider
@@ -115,7 +120,10 @@ async def configure_llm(payload: LlmConfigRequest):
 
 
 @router.post("/llm/verify", response_model=LlmVerifyResponse)
-async def verify_llm_key(payload: LlmVerifyRequest):
+async def verify_llm_key(
+    payload: LlmVerifyRequest,
+    user: User = Depends(require_current_user),
+):
     """
     验证 LLM API Key 有效性。
     创建一个临时 ChatOpenAI 实例，发送一条简单的测试请求。

@@ -103,6 +103,11 @@ class BaseAgent:
             return {"agent": self.role, "status": "done", "result": result}
 
         except Exception as e:
+            # UserQuestionError 需要向上传播，由 WorkflowRunner 处理问答流程
+            from app.services.agent_coordinator import UserQuestionError
+            if isinstance(e, UserQuestionError):
+                raise
+
             status_text = f"{self._get_status_label('error')}: {str(e)[:100]} ({self.name})"
             await event_bus.emit(Event(
                 type="agent_status",

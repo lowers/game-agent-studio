@@ -194,6 +194,8 @@ class AgentCoordinator:
     def __init__(self):
         # 活跃工作流: {workflow_id: WorkflowContext}
         self._workflows: dict[str, WorkflowContext] = {}
+        # WorkflowRunner 注册表: {workflow_id: WorkflowRunner}
+        self._workflow_runners: dict[str, object] = {}
         # 全局协调器实例
         AgentCoordinator._instance = self
 

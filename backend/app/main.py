@@ -41,7 +41,6 @@ def _get_cors_origins() -> Sequence[str]:
             "http://localhost:8000",
             "http://localhost:8001",
             "http://localhost:8002",
-            "null",
         ]
     return allowed
 
@@ -151,8 +150,8 @@ class OutputCSPMiddleware(BaseHTTPMiddleware):
         response = await call_next(request)
         if request.url.path.startswith("/output"):
             response.headers["Content-Security-Policy"] = (
-                "sandbox allow-scripts 'none' allow-same-origin; "
-                "default-src 'self' 'unsafe-inline' 'unsafe-eval'; "
+                "sandbox allow-same-origin; "
+                "default-src 'self'; "
                 "script-src 'none';"
             )
             response.headers["X-Content-Type-Options"] = "nosniff"

@@ -452,9 +452,7 @@ async def submit_question_answer(
     3. 触发 PendingQuestions._pending_events 通知等待中的 Agent 协程
     4. Agent 恢复执行，应用用户反馈
     """
-    from app.services.agent_coordinator import AgentCoordinator
-
-    coordinator = AgentCoordinator()
+    from app.services.agent_coordinator import coordinator
     success = await coordinator.submit_answer(payload.question_id, str(payload.answer))
 
     if not success:

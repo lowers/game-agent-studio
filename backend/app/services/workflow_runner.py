@@ -105,6 +105,8 @@ class WorkflowRunner:
         # 轮次控制
         self._round_lock = asyncio.Lock()
         self._current_task: asyncio.Task | None = None
+        # P1: 当前待回答问题 {expert_id: question_id}
+        self._current_question: dict[str, str | None] = {}
 
     async def run(self) -> dict:
         """执行完整工作流。
@@ -208,20 +210,21 @@ class WorkflowRunner:
                     }
                     # 🔴 Wiki 错误记录：任务执行失败时自动记录
                     await self._record_error_to_wiki(eid, str(result), round_num)
+                    await self._broadcast_expert_status(eid, "error", round_num)
                 elif isinstance(result, dict):
                     self.dag_scheduler.mark_done(eid)
                     self.session.expert_results[eid] = {
                         "status": "done",
                         "output": result.get("result", ""),
                     }
+                    await self._broadcast_expert_status(eid, "done", round_num)
                 else:
                     self.dag_scheduler.mark_done(eid)
                     self.session.expert_results[eid] = {
                         "status": "done",
                         "output": str(result) if result else "",
                     }
-
-                await self._broadcast_expert_status(eid, "done", round_num)
+                    await self._broadcast_expert_status(eid, "done", round_num)
 
     async def _record_error_to_wiki(self, expert_id: str, error_msg: str, round_num: int) -> None:
         """记录错误到 LLM Wiki（失败时自动记录）。"""
@@ -300,7 +303,7 @@ class WorkflowRunner:
         }
 
         # P1: 存储当前待回答问题，用于回答接口
-        _current_question[expert_id] = None
+        self._current_question[expert_id] = None
 
         try:
             # 调用 Agent.run(project_id, task, context)
@@ -355,7 +358,7 @@ class WorkflowRunner:
             )
 
         # 存储当前问题 ID，供 answer_question API 使用
-        _current_question[expert_id] = q.question_id
+        self._current_question[expert_id] = q.question_id
 
         # 暂停工作流
         self.session.status = "waiting_question"

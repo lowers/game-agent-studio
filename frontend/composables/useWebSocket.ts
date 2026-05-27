@@ -24,14 +24,24 @@ export function useWebSocket(options: { projectId?: number; sessionId?: string }
   let isUnmounted = false
   let messageHandlers: Map<string, ((data: any) => void)[]> = new Map()
 
-  // 计算 WebSocket URL
+  // 计算 WebSocket URL（附带 JWT token 用于后端认证）
   const wsUrl = computed(() => {
+    let url: string
     if (options.projectId) {
-      return `${wsBase}/${options.projectId}`
+      url = `${wsBase}/${options.projectId}`
     } else if (options.sessionId) {
-      return `${wsBase}/chat/${options.sessionId}`
+      url = `${wsBase}/chat/${options.sessionId}`
+    } else {
+      url = `${wsBase}/chat`
     }
-    return `${wsBase}/chat`
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('token')
+      if (token) {
+        const separator = url.includes('?') ? '&' : '?'
+        url = `${url}${separator}token=${encodeURIComponent(token)}`
+      }
+    }
+    return url
   })
 
   function connect() {
